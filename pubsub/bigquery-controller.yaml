@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bigquery-controller
+  labels:
+    name: bigquery-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: bigquery-controller
+    spec:
+      containers:
+      - name: bigquery
+        image: gcr.io/$PROJECT_ID/pubsub_pipeline
+        env:
+        - name: PROCESSINGSCRIPT
+          value: pubsub-to-bigquery
+        # Change this to your pubsub topic
+        - name: PUBSUB_TOPIC
+          value: projects/$PROJECT_ID/topics/new_tweets
+        # Change this to your project ID.
+        - name: PROJECT_ID
+          value: $PROJECT_ID
+        # Change the following two settings to your dataset and table.
+        - name: BQ_DATASET
+          value: rtda
+        - name: BQ_TABLE
+          value: tweets

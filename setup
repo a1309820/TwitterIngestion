@@ -1,0 +1,40 @@
+#gcloud beta pubsub topics create new_tweets
+gcloud beta pubsub topics list
+
+# create BigQuery table
+bq mk rtda
+bq mk -t rtda.tweets ./bigquery-setup/schema.json
+bq ls rtda
+
+# create custom docker image
+docker build -t gcr.io/$PROJECT_ID/pubsub_pipeline ./pubsub/pubsub-pipe-image
+gcloud docker -- push gcr.io/$PROJECT_ID/pubsub_pipeline
+
+# Start K8s cluster
+gcloud compute zones list
+gcloud config set compute/zone us-east1-b
+gcloud container clusters create twitter --scopes "https://www.googleapis.com/auth/userinfo.email","cloud-platform" --num-nodes 1
+
+# start pub/sub to BigQuery app
+kubectl create -f ./pubsub/bigquery-controller.yaml
+kubectl get pods
+kubectl get deployments
+
+# start Twitter to pub/sub app
+kubectl create -f ./pubsub/twitter-stream.yaml
+kubectl get pods
+kubectl get deployments
+
+
+# CLEAN UP
+# remove pods without deleting the cluster
+#kubectl delete deployment -l "name in (twitter-stream, bigquery-controller)"
+
+# to delete cluster
+#gcloud container clusters delete twitter
+
+# to delete BigQuery data
+#bq rm rtda.tweets
+
+# to completely remove all the data and resources for the project
+#gcloud projects delete $PROJECT_ID
